@@ -12,7 +12,8 @@ function h3(x, y, k) {
   return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 }
 
-const hsl = (h, s, l) => `hsl(${((h % 360) + 360) % 360} ${s}% ${l}%)`;
+// quantized so memoized spans get string-identical colors between frames
+const hsl = (h, s, l) => `hsl(${Math.round(((h % 360) + 360) % 360)} ${s | 0}% ${Math.round(l)}%)`;
 
 export const EFFECTS = [
   {
@@ -23,7 +24,7 @@ export const EFFECTS = [
       const fx = x / env.cols;
       const band = ((t * 0.35) % 1.35) - 0.175;
       const d = Math.abs(fx - band);
-      if (d < 0.07) return hsl(fx * 300 + t * 20, 45, 97 - d * 260);
+      if (d < 0.07) return hsl(fx * 300 + t * 20, 45, 52 + 45 * (1 - d / 0.07));
       return hsl(fx * 300, 88, 52);
     },
   },
@@ -36,8 +37,9 @@ export const EFFECTS = [
       const l = 55 + 24 * Math.sin(t * 2 + (x + y) * 0.3);
       return hsl(h, 100, l);
     },
-    shadow(t) {
-      return `0 0 7px hsla(${(t * 40) % 360},100%,62%,.85), 0 0 16px hsla(${(t * 40 + 60) % 360},100%,55%,.5)`;
+    shadow() {
+      // neutral white bloom in em — scales with the view's font-size (hero 17px, tiles 8.6px)
+      return '0 0 .4em hsla(0,0%,100%,.6), 0 0 .95em hsla(0,0%,100%,.3)';
     },
   },
   {
@@ -94,7 +96,7 @@ export const EFFECTS = [
     name: 'rain',
     blurb: 'rainbow columns falling downward',
     color(x, y, t, env) {
-      return hsl(x * 13 + (y - t * 26) * 11, 100, 58);
+      return hsl(x * 13 + (y - t * 9) * 11, 100, 58); // ~2.5s per grid fall: readable rain
     },
   },
   {
@@ -103,7 +105,7 @@ export const EFFECTS = [
     blurb: 'digital green with code flickers',
     color(x, y, t, env) {
       const k = Math.floor(t * 8);
-      if (h3(x, y, k) < 0.07) return hsl(h3(x, y, k + 99) * 360, 100, 72);
+      if (h3(x, y, k) < 0.07) return hsl(120 + h3(x, y, k + 99) * 40, 100, 72); // stay green
       return hsl(135, 100, 35 + h3(x, y, k + 7) * 35);
     },
     char(x, y, t, ch, env) {
@@ -158,7 +160,7 @@ export const EFFECTS = [
       return hsl(265, 35, 58 + h3(x, y, 3) * 12);
     },
     shadow() {
-      return '0 0 5px hsla(280,100%,80%,.4)';
+      return '0 0 .3em hsla(280,100%,80%,.4)';
     },
   },
   {
@@ -168,7 +170,7 @@ export const EFFECTS = [
     color(x, y, t, env) {
       const idx = y * env.cols + x;
       const prog = (t * 26) % (env.cols * env.rows + 40);
-      if (idx < prog) return hsl(idx * 2.2 + t * 30, 100, 60);
+      if (idx < prog) return hsl(idx * 0.34 + t * 10, 100, 60); // one hue wrap across the grid
       return hsl(260, 30, 16);
     },
   },
@@ -177,19 +179,19 @@ export const EFFECTS = [
     name: 'fire',
     blurb: 'heat crawling up from below',
     color(x, y, t, env) {
-      const v = 1 - y / env.rows;
-      const f = h3(x, y, Math.floor(t * 10)) * 0.45;
-      const heat = Math.max(0, v - f * 0.5 + 0.15);
-      const hue = Math.max(0, 52 - heat * heat * 130);
-      return hsl(hue, 100, Math.min(92, 26 + heat * 62));
+      const v = y / env.rows; // 1 at the bottom, where the fire is
+      const f = h3(x, y, Math.floor(t * 10)) * 0.5;
+      const heat = Math.min(1, Math.max(0, v - f + 0.15));
+      return hsl(55 * heat, 100, 20 + heat * 70); // cool dark red → hot yellow
     },
   },
   {
     id: 'candy',
     name: 'candy',
     blurb: 'bubbly pastel stripes on the move',
-    color(x, y, t) {
-      return hsl((x + y) * 9 + t * 24, 68, 76 + 6 * Math.sin(t * 2 + x * 0.4));
+    color(x, y, t, env) {
+      // radial stripes — keeps it distinct from `full`'s diagonal
+      return hsl(Math.hypot(x - env.cx, y - env.cy) * 9 + t * 24, 68, 76 + 6 * Math.sin(t * 2 + x * 0.4));
     },
   },
 ];

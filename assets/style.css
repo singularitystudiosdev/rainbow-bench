@@ -224,6 +224,11 @@ footer {
 footer a { color: #7aa2ff; text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 
+/* keep per-span color invalidations inside their own box; let the browser
+   skip layout/paint of tiles that are scrolled away entirely */
+.tile { content-visibility: auto; contain-intrinsic-size: auto 190px; }
+.tile pre, #hero-mascot { contain: layout paint; }
+
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; }
   #hero-mascot { font-size: 13px; }
