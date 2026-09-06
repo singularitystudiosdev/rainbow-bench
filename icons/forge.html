@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>icon forge</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="1024" height="1024"></canvas>
+<script type="module">
+  // App-icon forge: renders one static mascot frame (the same vendored engine the
+  // benchmarks site runs) through the `full rainbow` tile palette, centered on a
+  // black-family background. One icon per ?bg=, via headless Chrome --screenshot.
+  import { mascotFrame } from '../assets/mascot.js';
+  import { EFFECTS } from '../assets/effects.js';
+
+  const BGS = {
+    flat:      (ctx, S) => { ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, S, S); },
+    nearblack: (ctx, S) => { ctx.fillStyle = '#0b0b10'; ctx.fillRect(0, 0, S, S); },
+    radial:    (ctx, S) => {
+      const g = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S * 0.62);
+      g.addColorStop(0, '#1b1b26'); g.addColorStop(1, '#000000');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+    },
+    diagonal:  (ctx, S) => {
+      const g = ctx.createLinearGradient(0, 0, S, S);
+      g.addColorStop(0, '#16161f'); g.addColorStop(1, '#000000');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+    },
+    vertical:  (ctx, S) => {
+      const g = ctx.createLinearGradient(0, 0, 0, S);
+      g.addColorStop(0, '#15151d'); g.addColorStop(1, '#000000');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+    },
+    bloom:     (ctx, S) => {
+      ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, S, S);
+      // faint rainbow-tinted halo behind the mascot — the "light gradient" variant
+      const g = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S * 0.44);
+      g.addColorStop(0, 'rgba(120,140,255,0.20)');
+      g.addColorStop(0.55, 'rgba(90,60,160,0.10)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+    },
+  };
+
+  const S = 1024;
+  const bgName = new URLSearchParams(location.search).get('bg') ?? 'flat';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // one static frame of the live engine's default character
+  const ROWS = 23, COLS = 46;
+  let grid;
+  try {
+    grid = mascotFrame(COLS, ROWS, { eyeL: 'open', eyeR: 'open', mouth: 'smile', bob: 0, pupil: { x: 0, y: 0 } });
+  } catch (err) {
+    grid = Array.from({ length: ROWS }, () => ' '.repeat(COLS));
+    console.warn('engine frame unavailable:', err);
+  }
+
+  // crop to the art's bounding box so centering is on the face, not the grid
+  let minX = COLS, maxX = -1, minY = ROWS, maxY = -1;
+  grid.forEach((line, y) => {
+    for (let x = 0; x < line.length; x++) {
+      if (line[x] !== ' ') {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  });
+  if (maxX < 0) { minX = 0; maxX = COLS - 1; minY = 0; maxY = ROWS - 1; }
+  const gw = maxX - minX + 1, gh = maxY - minY + 1;
+
+  // App-icon padding convention (Apple grid, Squircle ref): artwork ≈ 60-66% of canvas
+  const PAD = 0.62 * S;
+  const cw = 0.6, lh = 1.02;             // glyph advance ≈ 0.6em, line box 1.02em
+  const F = Math.min(PAD / (gw * cw), PAD / (gh * lh));
+  const blockW = gw * cw * F, blockH = gh * lh * F;
+  const ox = (S - blockW) / 2 - minX * cw * F;
+  const oy = (S - blockH) / 2 - minY * lh * F;
+
+  (BGS[bgName] ?? BGS.flat)(ctx, S);
+
+  const full = EFFECTS.find((e) => e.id === 'full');
+  ctx.font = `600 ${F.toFixed(1)}px "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  for (let y = minY; y <= maxY; y++) {
+    const line = grid[y] ?? '';
+    for (let x = minX; x <= maxX; x++) {
+      const ch = line[x] ?? ' ';
+      if (ch === ' ') continue;
+      ctx.fillStyle = full.color(x, y, 0, { cols: COLS, rows: ROWS, cx: COLS / 2, cy: ROWS / 2 });
+      ctx.fillText(ch, ox + x * cw * F, oy + y * lh * F);
+    }
+  }
+  document.title = `icon-${bgName}`;
+</script>
+</body>
+</html>
