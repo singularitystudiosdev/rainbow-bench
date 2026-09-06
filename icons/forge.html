@@ -159,6 +159,58 @@
       ctx.fillText(ch, ox + x * cw * F, oy + y * lh * F);
     }
   }
+
+  // ---------- iPhone 17 / liquid-glass edge: squircle clip + specular rim ----------
+  // the treatment iOS 26's home screen bakes onto flat third-party icons (wahoo
+  // style): transparent outside the squircle, a bright specular rim sweeping the
+  // edge, and a faint dark inner line for glass depth.
+  function squirclePath(c, x, y, w, h, r) {
+    if (typeof c.roundRect === 'function') { c.beginPath(); c.roundRect(x, y, w, h, r); return; }
+    const rad = Math.min(r, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + rad, y);
+    c.arcTo(x + w, y, x + w, y + h, rad);
+    c.arcTo(x + w, y + h, x, y + h, rad);
+    c.arcTo(x, y + h, x, y, rad);
+    c.arcTo(x, y, x + w, y, rad);
+    c.closePath();
+  }
+
+  const R = S * 0.2237; // iOS squircle radius fraction
+  const rimW = S * 0.016;
+
+  // glass sheen: one very soft diagonal light pass over the whole face
+  const sheen = ctx.createLinearGradient(0, 0, S, S);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.07)');
+  sheen.addColorStop(0.5, 'rgba(255,255,255,0.015)');
+  sheen.addColorStop(1, 'rgba(255,255,255,0.045)');
+  ctx.fillStyle = sheen;
+  ctx.fillRect(0, 0, S, S);
+
+  // cut everything outside the squircle (transparent corners)
+  ctx.globalCompositeOperation = 'destination-in';
+  squirclePath(ctx, 0, 0, S, S, R);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+
+  // specular rim, inset by half its width so it stays fully inside the shape
+  const rim = ctx.createLinearGradient(0, 0, S, S);
+  rim.addColorStop(0, 'rgba(255,255,255,0.95)');
+  rim.addColorStop(0.35, 'rgba(255,255,255,0.30)');
+  rim.addColorStop(0.7, 'rgba(255,255,255,0.22)');
+  rim.addColorStop(1, 'rgba(255,255,255,0.75)');
+  squirclePath(ctx, rimW / 2, rimW / 2, S - rimW, S - rimW, R - rimW / 2);
+  ctx.strokeStyle = rim;
+  ctx.lineWidth = rimW;
+  ctx.stroke();
+
+  // faint dark inner line: the glass edge's shadow lip
+  const lipW = S * 0.005;
+  squirclePath(ctx, rimW + lipW, rimW + lipW, S - 2 * (rimW + lipW), S - 2 * (rimW + lipW), R - rimW - lipW);
+  ctx.strokeStyle = 'rgba(0,0,0,0.32)';
+  ctx.lineWidth = lipW;
+  ctx.stroke();
   document.title = `icon-${bgName}`;
 </script>
 </body>
