@@ -156,6 +156,17 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let last = performance.now();
 let bank = 0;
 
+// tiles scrolled offscreen stop being painted — the grid is where the frame
+// budget goes, not the per-glyph math
+const visible = tiles.map(() => true);
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    const i = tiles.findIndex((t) => t.view.el.parentElement === e.target);
+    if (i >= 0) visible[i] = e.isIntersecting;
+  }
+}, { rootMargin: '80px' });
+tiles.forEach((t) => io.observe(t.view.el.parentElement));
+
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
@@ -171,7 +182,7 @@ function frame(now) {
     const fx = EFFECTS[current];
     heroView.paint(rows, fx, tt);
     for (let i = 0; i < tiles.length; i++) {
-      if ((i & 1) === bank) tiles[i].view.paint(rows, tiles[i].fx, tt);
+      if (visible[i] && (i & 1) === bank) tiles[i].view.paint(rows, tiles[i].fx, tt);
     }
     bank ^= 1;
   }
