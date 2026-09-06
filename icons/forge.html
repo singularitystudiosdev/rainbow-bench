@@ -177,7 +177,7 @@
   }
 
   const R = S * 0.2237; // iOS squircle radius fraction
-  const rimW = S * 0.007; // liquid glass: hairline, not a bezel
+  const rimW = S * 0.0042; // liquid glass: hairline, not a bezel
 
   // glass sheen: one very soft diagonal light pass over the whole face
   const sheen = ctx.createLinearGradient(0, 0, S, S);
@@ -206,7 +206,7 @@
   ctx.stroke();
 
   // faint dark inner line: the glass edge's shadow lip
-  const lipW = S * 0.003;
+  const lipW = S * 0.0018;
   squirclePath(ctx, rimW + lipW, rimW + lipW, S - 2 * (rimW + lipW), S - 2 * (rimW + lipW), R - rimW - lipW);
   ctx.strokeStyle = 'rgba(0,0,0,0.16)';
   ctx.lineWidth = lipW;
