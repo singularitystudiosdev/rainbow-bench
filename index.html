@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>rainbow bench — the superbot mascot, in every color</title>
+  <meta name="description" content="The superbot.gg ASCII mascot running through 16 rainbow effects: shine, bloom, spiral, scanline, matrix, fire and more." />
+  <link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+  <header>
+    <h1>RAINBOW BENCH</h1>
+    <p>
+      one live <a href="https://xdxdxd.dsh.sh/benchmarks">superbot.gg</a> ASCII mascot, painted through 16 rainbow effects.
+      the mascot code is the real engine from the benchmarks page, untouched.
+    </p>
+  </header>
+
+  <main>
+    <section class="hero">
+      <pre id="hero-mascot" aria-label="superbot mascot with the selected rainbow effect"></pre>
+      <div class="hero-side">
+        <h2 id="effect-name">shine</h2>
+        <p id="effect-blurb"></p>
+        <div id="chips" class="chips" role="listbox" aria-label="pick a rainbow effect"></div>
+        <div class="controls">
+          <button id="prev" class="btn" aria-label="previous effect">←</button>
+          <button id="next" class="btn" aria-label="next effect">→</button>
+          <button id="shuffle" class="btn">shuffle</button>
+          <label class="auto"><input type="checkbox" id="auto" checked /> rotate</label>
+          <span class="speed">speed <input type="range" id="speed" min="0.25" max="3" step="0.05" value="1" /> <span id="speed-val">1.00×</span></span>
+        </div>
+      </div>
+    </section>
+
+    <h3 class="section-title">the dashboard — every effect, at once</h3>
+    <div id="grid"></div>
+  </main>
+
+  <footer>
+    mascot engine taken directly from
+    <a href="https://xdxdxd.dsh.sh/benchmarks">xdxdxd.dsh.sh/benchmarks</a>
+    (<a href="https://xdxdxd.dsh.sh/site/assets/mascot.js">mascot.js</a>, vendored verbatim).
+    one hidden instance animates; every view above paints its grid.
+  </footer>
+
+  <script type="module" src="./assets/main.js"></script>
+</body>
+</html>
