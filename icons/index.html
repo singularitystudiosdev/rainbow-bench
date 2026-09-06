@@ -36,8 +36,9 @@
   <header>
     <h1>RAINBOW BENCH — APP ICONS</h1>
     <p>
-      the <a href="https://xdxdxd.dsh.sh/benchmarks">superbot.gg</a> mascot frame, full-rainbow palette, on six black-family
-      backgrounds. 1024px square masters (App Store style — the OS applies the corner mask) plus
+      the <a href="https://xdxdxd.dsh.sh/benchmarks">superbot.gg</a> mascot frame, full-rainbow palette, on twelve backgrounds —
+      black-family gradients plus artsy splits (half rainbow-on-black, half black-on-white).
+      1024px square masters (App Store style — the OS applies the corner mask) plus
       512 / 256 / 180 / 128 px sizes, rendered by the site's own engine at
       <a href="./forge.html?bg=flat">icons/forge.html</a>.
     </p>
@@ -53,12 +54,18 @@
 
   <script type="module">
     const BGS = [
+      ['bloom', 'faint rainbow bloom'],
+      ['bloom2', 'twin halos — magenta + cyan'],
+      ['streak', 'light streak behind the face'],
+      ['splitv', 'split: rainbow on black / dark on white, vertical'],
+      ['splith', 'split: rainbow on black / dark on white, horizontal'],
+      ['splitdiag', 'split: rainbow on black / dark on white, diagonal'],
+      ['duotone', 'duotone: rainbow top half, white bottom half'],
       ['flat', 'flat black'],
       ['nearblack', 'near-black #0b0b10'],
       ['radial', 'radial center glow'],
       ['diagonal', 'diagonal gradient'],
       ['vertical', 'vertical gradient'],
-      ['bloom', 'faint rainbow bloom'],
     ];
     const grid = document.getElementById('icon-grid');
     for (const [id, label] of BGS) {

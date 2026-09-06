@@ -44,7 +44,64 @@
       g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
     },
+    bloom2:    (ctx, S) => {
+      // twin halos — magenta left eye, cyan right eye, meeting behind the face
+      ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, S, S);
+      const halo = (cx, c0, c1) => {
+        const g = ctx.createRadialGradient(cx, S/2, 0, cx, S/2, S * 0.42);
+        g.addColorStop(0, c0); g.addColorStop(1, c1);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+      };
+      halo(S * 0.34, 'rgba(255,90,180,0.20)', 'rgba(255,90,180,0)');
+      halo(S * 0.66, 'rgba(70,200,255,0.20)', 'rgba(70,200,255,0)');
+    },
+    streak:    (ctx, S) => {
+      // dark with a soft horizontal light band leaping out from behind the face
+      ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, S, S);
+      ctx.save();
+      ctx.translate(S / 2, S / 2);
+      ctx.scale(1, 0.32);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, S * 0.52);
+      g.addColorStop(0, 'rgba(235,240,255,0.22)');
+      g.addColorStop(0.5, 'rgba(150,130,255,0.10)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-S, -S, S * 2, S * 2);
+      ctx.restore();
+    },
   };
+
+  // artsy glyph palettes: how one glyph is colored on a given variant. Splits run
+  // through the mascot's center so both compositions carry half the face.
+  const isRainbowSide = {
+    splitv:    (x) => x < COLS / 2,
+    splith:    (x, y) => y < ROWS / 2,
+    splitdiag: (x, y) => (x / COLS + y / ROWS) < 1,
+    duotone:   (x, y) => y < ROWS / 2, // background stays black; glyph color flips instead
+  };
+  const GLYPH = {
+    default: (x, y, full) => full(x, y),
+    splitv:    (x, y, full, env) => (isRainbowSide.splitv(x) ? full(x, y) : '#0d0d12'),
+    splith:    (x, y, full, env) => (isRainbowSide.splith(x, y) ? full(x, y) : '#0d0d12'),
+    splitdiag: (x, y, full, env) => (isRainbowSide.splitdiag(x, y) ? full(x, y) : '#0d0d12'),
+    duotone:   (x, y, full, env) => (isRainbowSide.duotone(x, y) ? full(x, y) : '#e9e9f2'),
+  };
+  const BG_OF = {
+    splitv:    (ctx, S) => splitBg(ctx, S, 'v'),
+    splith:    (ctx, S) => splitBg(ctx, S, 'h'),
+    splitdiag: (ctx, S) => splitBg(ctx, S, 'd'),
+  };
+  function splitBg(ctx, S, dir) {
+    // rainbow half: black; other half: white. one continuous square, no border.
+    ctx.fillStyle = '#f4f4f6';
+    ctx.fillRect(0, 0, S, S);
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    if (dir === 'v') ctx.rect(0, 0, S / 2, S);
+    else if (dir === 'h') ctx.rect(0, 0, S, S / 2);
+    else { ctx.moveTo(0, 0); ctx.lineTo(S, 0); ctx.lineTo(0, S); ctx.closePath(); }
+    ctx.fill();
+  }
 
   const S = 1024;
   const bgName = new URLSearchParams(location.search).get('bg') ?? 'flat';
@@ -84,9 +141,12 @@
   const ox = (S - blockW) / 2 - minX * cw * F;
   const oy = (S - blockH) / 2 - minY * lh * F;
 
-  (BGS[bgName] ?? BGS.flat)(ctx, S);
+  (BGS[bgName] ?? BG_OF[bgName] ?? BGS.flat)(ctx, S);
 
   const full = EFFECTS.find((e) => e.id === 'full');
+  const env = { cols: COLS, rows: ROWS, cx: COLS / 2, cy: ROWS / 2 };
+  const rainbowAt = (x, y) => full.color(x, y, 0, env);
+  const glyphAt = (GLYPH[bgName] ?? GLYPH.default);
   ctx.font = `600 ${F.toFixed(1)}px "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
@@ -95,7 +155,7 @@
     for (let x = minX; x <= maxX; x++) {
       const ch = line[x] ?? ' ';
       if (ch === ' ') continue;
-      ctx.fillStyle = full.color(x, y, 0, { cols: COLS, rows: ROWS, cx: COLS / 2, cy: ROWS / 2 });
+      ctx.fillStyle = glyphAt(x, y, rainbowAt, env);
       ctx.fillText(ch, ox + x * cw * F, oy + y * lh * F);
     }
   }
